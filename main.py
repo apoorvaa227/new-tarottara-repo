@@ -65,9 +65,10 @@
 # if __name__ == "__main__":
 #     main()
 
+
 import time
-from intent import classify_intent
-from tarot_reader import perform_reading
+from intent import classify_intent_cached
+from tarot_reader import cached_reading
 
 def main():
     print("🔮 Welcome to TarotTara – your magical tarot guide (type 'exit' to quit)")
@@ -82,14 +83,14 @@ def main():
 
         # Step 1: Classify the user's intent
         intent_start = time.time()
-        intent = classify_intent(question)
+        intent = classify_intent_cached(question)
         intent_duration = time.time() - intent_start
         print(f"\n✨ Intent detected: {intent} (in {intent_duration:.2f} sec)")
 
         # Step 2: Perform tarot reading based on intent
         print("🃏 Drawing cards and interpreting...")
         prediction_start = time.time()
-        result = perform_reading(question, intent)
+        result = cached_reading(question, intent)
         prediction_duration = time.time() - prediction_start
 
         total_duration = time.time() - total_start
@@ -120,5 +121,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

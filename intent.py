@@ -1,40 +1,54 @@
-from langchain_ollama import ChatOllama
-from config import MODEL_NAME
+# from transformers import pipeline
+# from functools import lru_cache
+# # Load zero-shot classifier
+# classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-#Connect to your local LLaMA 3 model
-llm = ChatOllama(model=MODEL_NAME)
+# # Intent labels you want to classify
+# INTENT_LABELS = ["yes_no", "timeline", "insight", "guidance", "general"]
 
-def classify_intent(question: str) -> str:
-    prompt = (
-   "You are an intent classifier. Your job is to read a user's question and classify it into ONLY ONE of these categories:\n"
-    "- yes_no: A question that can be answered with yes or no.\n"
-    "- timeline: A question about when, how long, or timeframes.\n"
-    "- insight: A question asking for an explanation, reason, or deeper understanding.\n"
-    "- guidance: A question seeking advice, recommendation, or next steps.\n"
-    "- general: Anything else, including greetings, statements, or unclear intent.\n"
-    "\n"
-    "Respond with ONLY one of the category names, in all lowercase, and nothing else. Do not include any explanation, punctuation, or extra words.\n"
-    "\n"
-    "Here are some examples:\n"
-    "Q: Will I become an engineer?\n"
-    "A: yes_no\n"
-    "Q: When will I become an engineer?\n"
-    "A: timeline\n"
-    "Q: Why do people become engineers?\n"
-    "A: insight\n"
-    "Q: What should I do to become an engineer?\n"
-    "A: guidance\n"
-    "Q: Hello there!\n"
-    "A: general\n"
-    "\n"
-    "Classify this question:\n"
-    f"Q: {question}\n"
-    "A:"
-)
-    
-    response = llm.invoke(prompt)
-    intent = response.content.strip().lower()
+# def classify_intent(question: str) -> str:
+#     result = classifier(question, INTENT_LABELS)
+#     return result["labels"][0]  # Top predicted intent
 
-    valid = {"yes_no", "timeline", "insight", "guidance", "general"}
-    return intent if intent in valid else "general"
 
+# @lru_cache(maxsize=100)
+# def classify_intent_cached(question: str, intent: str):
+#     return classify_intent(question)
+
+
+
+# from transformers import pipeline
+# from functools import lru_cache
+
+# classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+
+# INTENT_LABELS = ["yes_no", "timeline", "insight", "guidance", "general"]
+
+# def normalize(text: str) -> str:
+#     """Clean input: lowercase, strip, remove extra spaces."""
+#     return ' '.join(text.lower().strip().split())
+
+# @lru_cache(maxsize=1000)
+# def classify_intent(question: str) -> str:
+#     question = normalize(question)
+#     result = classifier(question, INTENT_LABELS)
+#     return result["labels"][0]
+
+
+
+from transformers import pipeline
+from functools import lru_cache
+
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+
+INTENT_LABELS = ["yes_no", "timeline", "insight", "guidance", "general"]
+
+def normalize(text: str) -> str:
+    """Clean input: lowercase, strip, remove extra spaces."""
+    return ' '.join(text.lower().strip().split())
+
+@lru_cache(maxsize=1000)
+def classify_intent_cached(question: str) -> str:
+    question = normalize(question)
+    result = classifier(question, INTENT_LABELS)
+    return result["labels"][0]
