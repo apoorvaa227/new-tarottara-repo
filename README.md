@@ -153,6 +153,3 @@ Edit
 Once you save this:
 
 ```bash
-git add README.md
-git commit -m "Update README with project structure and features"
-git push origin apoorva-branch
