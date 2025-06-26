@@ -1,168 +1,158 @@
 # 🔮 TarotTara - AI-Powered Tarot Reading System
 
-TarotTara is an intelligent tarot reading system that uses AI to provide personalized tarot readings and interpretations. The system can handle various types of questions, from yes/no queries to timeline predictions and general guidance.
+**TarotTara** is an intelligent tarot reading system powered by AI that provides personalized tarot card readings and interpretations. The system understands user questions, classifies intent, draws appropriate cards, and returns insightful readings in both text and voice — with support for multiple languages.
+
+---
 
 ## 🌟 Features
 
-- **Multiple Reading Types**:
-  - Yes/No questions
-  - Timeline predictions
-  - General insights
-  - Guidance and advice
-  - General readings
+- 🧠 **Smart Intent Detection** — Classifies questions (yes/no, timeline, insight, etc.)
+- 🃏 **Dynamic Tarot Card Readings** — Randomized draws with AI-based interpretations
+- 📅 **Timeline Predictions** — Date-range predictions using numeric cards
+- 🌐 **Multilingual Support** — English, Hindi, Spanish, French (input & output)
+- 🔊 **Voice Input & Output** — Ask questions using voice; get voice answers
+- 📁 **PDF Log Generation** — Stores user session info in a downloadable PDF
+- ⚡ **Streamlit UI Support** — Web interface with voice, audio upload, and more
 
-- **Smart Intent Classification**: Automatically detects the type of question being asked
-- **Comprehensive Card Meanings**: Uses a knowledge base of tarot card interpretations
-- **Date Range Predictions**: For timeline-based questions
-- **Natural Language Processing**: Powered by LLaMA 3 for human-like responses
+---
 
 ## 🛠️ Prerequisites
 
-- Python 3.10 or higher
-- Ollama (for running LLaMA 3 locally)
-- PDF files containing tarot card meanings (1.pdf and 2.pdf)
+- Python 3.10 or above
+- [Ollama](https://ollama.com/) (to run the LLaMA 3 model locally)
+- PDF files containing tarot card meanings (e.g., `1.pdf`, `2.pdf`)
+
+---
 
 ## 📦 Installation
 
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone <repository-url>
-cd tarot-tara
-```
+cd AI-Tarot
 
-2. Install required Python packages:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
-
-3. Install Ollama:
-   - Download from [Ollama's official website](https://ollama.ai/download)
-   - Follow the installation instructions for your operating system
-
-4. Pull the LLaMA 3 model:
-```bash
+⚙️ Ollama Setup
+bash
+Copy
+Edit
+# Download and install Ollama (https://ollama.com/)
+# Then pull the LLaMA 3 model
 ollama pull llama3
-```
-
-## 🚀 Usage
-
-1. Start the program:
-```bash
+🚀 Usage
+🔸 Terminal-based App
+bash
+Copy
+Edit
 python main.py
-```
+Sample Questions:
 
-2. Type your question when prompted. Examples:
-   - "Will I get a promotion this year?"
-   - "When will I find true love?"
-   - "What should I focus on in my career?"
-   - "Why am I feeling stuck in my current situation?"
+"Will I get a promotion this year?"
 
-3. The system will:
-   - Detect the intent of your question
-   - Draw appropriate cards
-   - Provide a detailed interpretation
+"When will I find true love?"
 
-## 📚 Project Structure
+"What should I focus on in my career?"
 
-- `main.py`: Main entry point and user interface
-- `deck.py`: Tarot deck definitions and date range calculations
-- `intent.py`: Question intent classification
-- `tarot_reader.py`: Core reading logic and card interpretation
-- `rag.py`: Retrieval-Augmented Generation for card meanings
-- `config.py`: Configuration settings
+"Why am I feeling stuck?"
 
-## 💻 Code Structure
+🔸 Web App with Streamlit
+bash
+Copy
+Edit
+streamlit run temp_main.py
+Features:
 
-```
-tarot-tara/
-├── main.py                 # Main application entry point
-│   ├── User input handling
-│   ├── Intent classification
-│   └── Reading display
-│
-├── deck.py                 # Tarot deck management
-│   ├── Card definitions
-│   │   ├── SUITS
-│   │   ├── NUMBERS
-│   │   ├── COURTS
-│   │   └── MAJOR_ARCANA
-│   ├── Deck generation
-│   │   ├── MINOR_ARCANA
-│   │   └── FULL_DECK
-│   └── Date range calculations
-│       └── DATE_RANGES
-│
-├── intent.py              # Question intent analysis
-│   ├── Intent classification
-│   │   ├── yes_no
-│   │   ├── timeline
-│   │   ├── insight
-│   │   ├── guidance
-│   │   └── general
-│   └── LLaMA model integration
-│
-├── tarot_reader.py        # Core reading functionality
-│   ├── Card drawing
-│   ├── Reading generation
-│   └── Interpretation logic
-│
-├── rag.py                 # Card meaning retrieval
-│   ├── Vector store initialization
-│   ├── PDF processing
-│   └── Meaning retrieval
-│
-├── config.py              # Configuration
-│   ├── MODEL_NAME
-│   ├── VECTOR_DB_DIR
-│   └── PDF_PATHS
-│
-├── requirements.txt       # Python dependencies
-├── README.md             # Project documentation
-└── PDF files
-    ├── 1.pdf            # Tarot card meanings
-    └── 2.pdf            # Additional meanings
-```
+Upload voice or type questions
 
-### Key Components
+Display tarot results with card visuals, voice playback, multilingual support
 
-1. **Main Application (`main.py`)**
-   - Handles user interaction
-   - Manages the reading flow
-   - Displays results
+📚 Project Structure
+graphql
+Copy
+Edit
+AI-Tarot/
+├── main.py                  # Terminal-based chatbot
+├── temp_main.py            # Streamlit-based web UI
+├── config.py               # Model and path configs
+├── requirements.txt        # Required libraries
+├── README.md               # Project documentation
 
-2. **Deck Management (`deck.py`)**
-   - Defines all tarot cards
-   - Manages card categories
-   - Calculates date ranges for timing predictions
+├── deck.py                 # Tarot deck definitions & date logic
+├── decorators.py           # Utility decorators (e.g., log_timing)
 
-3. **Intent Analysis (`intent.py`)**
-   - Uses LLaMA 3 to classify questions
-   - Determines reading type
-   - Routes to appropriate interpretation
+├── intent/
+│   └── intent.py           # Intent classification using LLaMA + rules
 
-4. **Reading Engine (`tarot_reader.py`)**
-   - Draws cards based on question type
-   - Generates interpretations
-   - Handles different reading styles
+├── tarot/
+│   └── tarot_reader.py     # Reading engine: draw cards + generate interpretation
 
-5. **Knowledge Base (`rag.py`)**
-   - Processes PDF documents
-   - Creates vector embeddings
-   - Retrieves relevant card meanings
+├── user_info/
+│   ├── user_info.py        # User info collection (terminal)
+│   └── pdf_export.py       # Save user info as PDF
 
-6. **Configuration (`config.py`)**
-   - Manages model settings
-   - Defines file paths
-   - Stores constants
+├── voice/
+│   ├── input.py            # Audio recording/transcription
+│   └── output.py           # Text-to-speech and replay
 
-## 🤝 Contributing
+├── data/
+│   ├── tarot_cards/        # Individual PDF files for each card
+│   └── tarot_guide.pdf     # Merged PDF file for reference
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+├── rag/
+│   ├── rag.py              # Vector DB & card meaning retrieval
 
-## 📝 License
+└── utils/
+    └── merge_tarot_pdfs.py # Merges individual card PDFs
+💻 Core Components
+🧠 Intent Classification (intent/intent.py)
+Classifies natural language into categories like:
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+yes_no, timeline, guidance, general, factual
 
-## ⚠️ Note
+🔮 Tarot Reading Engine (tarot/tarot_reader.py)
+Draws cards (1 for timeline, 3 for general)
 
-This is a tool for entertainment and self-reflection purposes. The readings should not be used as a substitute for professional advice in legal, financial, medical, or psychological matters.
+Uses LangChain + LLaMA to interpret cards
+
+Adds context from PDF-based RAG if needed
+
+📘 Knowledge Base RAG (rag/rag.py)
+Processes PDFs (1.pdf, 2.pdf)
+
+Uses sentence embeddings + ChromaDB for similarity search
+
+🗣️ Voice Interaction (voice/)
+input.py: record from mic or transcribe uploaded audio
+
+output.py: synthesize voice from text, replay on demand
+
+🧾 User Logging (user_info/)
+Captures user session info
+
+Stores as PDF using fpdf
+
+🤝 Contributing
+We welcome contributions from the open-source community!
+Create an issue or open a Pull Request.
+
+📝 License
+This project is licensed under the MIT License — see the LICENSE file for details.
+
+⚠️ Disclaimer
+TarotTara is intended for entertainment and self-reflection only. It should not replace professional legal, medical, or psychological advice.
+
+yaml
+Copy
+Edit
+
+---
+
+### ✅ Next Steps
+
+Once you save this:
+
+```bash
+git add README.md
+git commit -m "Update README with project structure and features"
+git push origin apoorva-branch
