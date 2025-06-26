@@ -4,8 +4,8 @@ import streamlit as st
 from fpdf import FPDF
 from langdetect import detect
 from deep_translator import GoogleTranslator
-from intent import classify_intent_cached
-from tarot_reader import cached_reading
+from intent.intent import classify_intent_cached
+from tarot.tarot_reader import cached_reading
 from voice_utils import record_from_mic, synthesize_voice, transcribe_audio
 
 st.set_page_config(page_title="TarotTara - Your Magical Guide", layout="centered")

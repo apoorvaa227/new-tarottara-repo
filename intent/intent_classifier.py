@@ -1,6 +1,6 @@
 # intent_classifier.py
 from transformers import pipeline
-
+from functools import lru_cache
 # Load a small, fast zero-shot classifier model
 classifier = pipeline("zero-shot-classification", model="typeform/distilbert-base-uncased-mnli")
 

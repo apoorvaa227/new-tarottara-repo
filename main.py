@@ -2,13 +2,14 @@ import os
 import time
 from fpdf import FPDF
 from playsound import playsound
-from intent import classify_intent_cached
-from tarot_reader import cached_reading
-from voice_utils import record_from_mic, synthesize_voice, transcribe_audio
+from intent.intent import classify_intent_cached
+from tarot.tarot_reader import cached_reading
+from voice.input import record_from_mic, transcribe_audio
+from voice.output import synthesize_voice, play_voice_response
 from langdetect import detect
 from deep_translator import GoogleTranslator
-from user_info import collect_user_info  
-from decorators import log_timing
+from user_info.user_info import collect_user_info  
+from utils.decorators import log_timing
 
 #  also in constant 
 def main():
@@ -94,16 +95,7 @@ def main():
             print("\n🔊 Speaking the response...")
             audio_path = synthesize_voice(final_answer, user_input_lang=user_language)
 
-            if audio_path and os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
-                playsound(audio_path)
-                while True:
-                    replay = input("🔁 Do you want to replay the voice response? (y/n): ").strip().lower()
-                    if replay == "y":
-                        playsound(audio_path)
-                    else:
-                        break
-            else:
-                print("⚠️ Audio file not generated properly.")
+            play_voice_response(audio_path)
         except Exception as e:
             print(f"⚠️ Error playing voice response: {e}")
 

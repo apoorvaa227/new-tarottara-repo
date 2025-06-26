@@ -1,4 +1,4 @@
-from pdf_reader import TarotPDFEmbedder
+from embedding.pdf_reader import TarotPDFEmbedder
 
 embedder = TarotPDFEmbedder()
 
