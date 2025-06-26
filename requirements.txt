@@ -10,4 +10,7 @@ sentence-transformers
 assemblyai
 elevenlabs
 python-dotenv
-playsound
+pip install playsound==1.2.2
+gTTS playsound
+deep-translator
+fpdf2

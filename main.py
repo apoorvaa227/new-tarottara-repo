@@ -7,51 +7,10 @@ from tarot_reader import cached_reading
 from voice_utils import record_from_mic, synthesize_voice, transcribe_audio
 from langdetect import detect
 from deep_translator import GoogleTranslator
+from user_info import collect_user_info  
+from decorators import log_timing
 
-def collect_user_info():
-    print("\U0001f52e Hi, how are you?")
-    mood = input("> ")
-
-    print("\U0001f31e How is your day going?")
-    day_summary = input("> ")
-
-    print("📝 Let me get some information for your reading.")
-
-    name = input("→ Full Name: ")
-    dob = input("→ Date of Birth (DD-MM-YYYY): ")
-    birth_place = input("→ Place of Birth: ")
-    birth_time = input("→ Time of Birth (e.g. 03:30 PM): ")
-    gender = input("→ Gender (M/F/Other): ")
-
-    user_info = {
-        "name": name,
-        "dob": dob,
-        "birth_place": birth_place,
-        "birth_time": birth_time,
-        "gender": gender,
-        "day_summary": day_summary,
-        "mood": mood,
-    }
-
-    save_user_info_as_pdf(user_info)
-    return user_info
-
-def save_user_info_as_pdf(info: dict):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
-    pdf.cell(200, 10, txt=" TarotTara User Log", ln=True, align="C")
-    pdf.ln(10)
-
-    for key, value in info.items():
-        pdf.cell(200, 10, txt=f"{key.replace('_', ' ').title()}: {value}", ln=True)
-
-    os.makedirs("user_logs", exist_ok=True)
-    filename = f"user_logs/{info['name'].replace(' ', '_')}_log.pdf"
-    pdf.output(filename)
-    print(f"\n✅ User information saved as: {filename}")
-
+#  also in constant 
 def main():
     print("\U0001f52e Welcome to TarotTara – your magical tarot guide (type 'exit' to quit)\n")
     collect_user_info()
@@ -97,26 +56,24 @@ def main():
         # Detect language and translate question to English if needed
         from_lang = detect(question)
         translated_question = GoogleTranslator(source='auto', target='en').translate(question) if from_lang != "en" else question
-
+        #  python decorator 
         # Intent classification
         intent_start = time.time()
         intent = classify_intent_cached(translated_question)
         intent_duration = time.time() - intent_start
         print(f"\n✨ Intent detected: {intent} (in {intent_duration:.2f} sec)")
 
-        print(" Drawing cards and interpreting...")
-        prediction_start = time.time()
-        result = cached_reading(translated_question, intent)
-        prediction_duration = time.time() - prediction_start
+        timed_cached_reading = log_timing("🔮 Tarot reading")(cached_reading)
+        result, prediction_duration = timed_cached_reading(translated_question, intent)
 
         if "error" in result:
             print(f"⚠️ Error: {result['error']}")
             continue
-
+        # decorator in reading 
         answer_en = result["interpretation"]
 
         print("\n🔍 TarotTara says:")
-
+        #  crash problem 
         if intent == "timeline":
             card = result["card"]
             date_range = result["date_range"]
@@ -127,7 +84,7 @@ def main():
         else:
             cards = result.get("cards", [])
             print(f"Cards Drawn: {', '.join(cards)}")
-
+    
         # Translate back to user's preferred language
         final_answer = GoogleTranslator(source='en', target=user_language).translate(answer_en) if user_language != "en" else answer_en
         print(f"\n🕡 TarotTara ({user_language}):\n{final_answer}")
