@@ -1,9 +1,10 @@
-pypdf
+# pypdf
 langchain
 langchain-community
 fpdf==1.7.2
 chromadb # Vector storage
 pytest
+pdfplumber
 boto3
 langchain_ollama
 sentence-transformers
@@ -14,3 +15,6 @@ playsound==1.2.2
 gTTS 
 deep-translator
 fpdf2
+SpeechRecognition
+streamlit
+langdetect 
