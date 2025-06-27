@@ -1,7 +1,7 @@
 pypdf
 langchain
 langchain-community
-fpdf-1.7.2
+fpdf==1.7.2
 chromadb # Vector storage
 pytest
 boto3
@@ -10,7 +10,7 @@ sentence-transformers
 assemblyai
 elevenlabs
 python-dotenv
-pip install playsound==1.2.2
-gTTS playsound
+playsound==1.2.2
+gTTS 
 deep-translator
 fpdf2
