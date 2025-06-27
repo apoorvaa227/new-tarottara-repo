@@ -10,21 +10,14 @@ from langdetect import detect
 from deep_translator import GoogleTranslator
 from user_info.user_info import collect_user_info  
 from utils.decorators import log_timing
-from context import create_context
-
 
 #  also in constant 
 def main():
-    ctx = create_context(language=user_language)
     print("\U0001f52e Welcome to TarotTara – your magical tarot guide (type 'exit' to quit)\n")
     collect_user_info()
 
     # Ask user for their preferred language
     user_language = input("Please select your language (en, hi, es, fr): ").strip().lower()
-
-    # creating context instance
-    ctx = create_context(language=user_language)    
-    
     print("\n✨ Thank you! How can I help you today?\n")
 
     while True:
@@ -77,10 +70,6 @@ def main():
         if "error" in result:
             print(f"⚠️ Error: {result['error']}")
             continue
-
-        # Add entry to context
-        ctx.add_entry(question, translated_question, intent, result)
-        
         # decorator in reading 
         answer_en = result["interpretation"]
 
