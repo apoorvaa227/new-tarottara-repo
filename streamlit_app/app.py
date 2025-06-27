@@ -1,4 +1,7 @@
+
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import time
 import streamlit as st
 from fpdf import FPDF
@@ -6,7 +9,8 @@ from langdetect import detect
 from deep_translator import GoogleTranslator
 from intent.intent import classify_intent_cached
 from tarot.tarot_reader import cached_reading
-from voice_utils import record_from_mic, synthesize_voice, transcribe_audio
+from voice.input import record_from_mic, transcribe_audio
+from voice.output import synthesize_voice, play_voice_response
 
 st.set_page_config(page_title="TarotTara - Your Magical Guide", layout="centered")
 st.title("🔮 TarotTara – Your Magical Tarot Guide")
@@ -108,10 +112,10 @@ if st.button("🔮 Submit Question") and question:
 
             st.success(final_answer)
 
-            audio_path = synthesize_voice(final_answer, user_input_lang=user_lang)
-            if audio_path and os.path.exists(audio_path):
-                audio_bytes = open(audio_path, 'rb').read()
-                st.audio(audio_bytes, format='audio/mp3')
+            # audio_path = synthesize_voice(final_answer, user_input_lang=user_lang)
+            # if audio_path and os.path.exists(audio_path):
+            #     audio_bytes = open(audio_path, 'rb').read()
+            #     st.audio(audio_bytes, format='audio/mp3')
 
             st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
             st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")

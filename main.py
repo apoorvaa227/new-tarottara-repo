@@ -91,13 +91,13 @@ def main():
         print(f"\n🕡 TarotTara ({user_language}):\n{final_answer}")
 
         # Voice generation
-        try:
-            print("\n🔊 Speaking the response...")
-            audio_path = synthesize_voice(final_answer, user_input_lang=user_language)
+        # try:
+        #     print("\n🔊 Speaking the response...")
+        #     audio_path = synthesize_voice(final_answer, user_input_lang=user_language)
 
-            play_voice_response(audio_path)
-        except Exception as e:
-            print(f"⚠️ Error playing voice response: {e}")
+        #     play_voice_response(audio_path)
+        # except Exception as e:
+        #     print(f"⚠️ Error playing voice response: {e}")
 
         total_duration = time.time() - total_start
         print("\n⏱️ Timing Summary:")

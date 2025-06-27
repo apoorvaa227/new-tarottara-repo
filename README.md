@@ -34,17 +34,13 @@ cd AI-Tarot
 # Install dependencies
 pip install -r requirements.txt
 ⚙️ Ollama Setup
-bash
-Copy
-Edit
+
 # Download and install Ollama (https://ollama.com/)
 # Then pull the LLaMA 3 model
 ollama pull llama3
 🚀 Usage
 🔸 Terminal-based App
-bash
-Copy
-Edit
+
 python main.py
 Sample Questions:
 
@@ -60,7 +56,7 @@ Sample Questions:
 bash
 Copy
 Edit
-streamlit run temp_main.py
+streamlit run streamlit_app/app.py
 Features:
 
 Upload voice or type questions
@@ -73,7 +69,8 @@ Copy
 Edit
 AI-Tarot/
 ├── main.py                  # Terminal-based chatbot
-├── temp_main.py            # Streamlit-based web UI
+├── streamlit_app/
+       └──app.py  # Streamlit-based web UI
 ├── config.py               # Model and path configs
 ├── requirements.txt        # Required libraries
 ├── README.md               # Project documentation

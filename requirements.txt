@@ -16,5 +16,8 @@ gTTS
 deep-translator
 fpdf2
 SpeechRecognition
+<<<<<<< HEAD
 streamlit
 langdetect 
+=======
+>>>>>>> 3f52c0b (add contextual meaning)
