@@ -13,7 +13,9 @@ class TarotPDFEmbedder:
         self.embedder = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
         # Init Pinecone client
-        self.pinecone = Pinecone(api_key=PINECONE_API_KEY)
+        # self.pinecone = Pinecone(api_key=PINECONE_API_KEY)
+        self.pinecone = Pinecone()  # Let it auto-read from env or secrets
+
 
         # Create index if it doesn't exist
         if COLLECTION_NAME not in self.pinecone.list_indexes().names():
