@@ -1,16 +1,36 @@
 import pdfplumber
-import chromadb
-from config import PDF_PATHS, VECTOR_DB_DIR
-from chromadb.utils import embedding_functions
+import uuid
+from sentence_transformers import SentenceTransformer
+from pinecone import Pinecone, ServerlessSpec
+from config import (
+    PDF_PATHS, PINECONE_API_KEY, PINECONE_REGION, PINECONE_CLOUD,
+    COLLECTION_NAME, EMBEDDING_MODEL_NAME
+)
 
 class TarotPDFEmbedder:
-    def __init__(self, model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", collection_name="tarot_knowledge"):
-        self.chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
-        self.embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
-        self.collection = self.chroma_client.get_or_create_collection(
-            name=collection_name,
-            embedding_function=self.embed_fn
-        )
+    def __init__(self):
+        # Init model
+        self.embedder = SentenceTransformer(EMBEDDING_MODEL_NAME)
+
+        # Init Pinecone client
+        self.pinecone = Pinecone(api_key=PINECONE_API_KEY)
+
+        # Create index if it doesn't exist
+        if COLLECTION_NAME not in self.pinecone.list_indexes().names():
+            self.pinecone.create_index(
+                name=COLLECTION_NAME,
+                dimension=384,
+                metric="cosine",
+                spec=ServerlessSpec(
+                    cloud=PINECONE_CLOUD,
+                    region=PINECONE_REGION
+                )
+            )
+            print(f"✅ Created index: {COLLECTION_NAME}")
+        else:
+            print(f"ℹ️ Index '{COLLECTION_NAME}' already exists")
+
+        self.index = self.pinecone.Index(COLLECTION_NAME)
 
     def extract_paragraphs(self):
         paragraphs = []
@@ -20,53 +40,32 @@ class TarotPDFEmbedder:
                 for i, page in enumerate(pdf.pages):
                     text = page.extract_text()
                     if text:
-                        # Split text by double newlines, Hindi-safe
                         chunks = [p.strip() for p in text.split('\n\n') if len(p.strip()) > 40]
-                        # print(f"✅ Page {i+1} → {len(chunks)} chunks found")
                         paragraphs.extend(chunks)
         return paragraphs
 
     def build_vector_store(self):
         paragraphs = self.extract_paragraphs()
-        ids = [f"chunk_{i}" for i in range(len(paragraphs))]
+        print(f"🧠 Total chunks to embed: {len(paragraphs)}")
 
-        # 🧪 Print embeddings for Hindi & English
-        # print("\n🧪 Sample embeddings:")
+        batch = []
+        for para in paragraphs:
+            vector = self.embedder.encode(para).tolist()
+            vector_id = str(uuid.uuid4())
+            batch.append({
+                "id": vector_id,
+                "values": vector,
+                "metadata": {"text": para}
+            })
 
-        for i, para in enumerate(paragraphs[:10]):
-            if 'भारत' in para or 'है' in para:
-                # print(f"\n🈳 Hindi sample text:\n{para}")
-                emb = self.embed_fn([para])[0]
-                # print(f"➡️ Embedding: {emb[:5]}...")  # show first 5 dimensions
-                break
-
-        for i, para in enumerate(paragraphs[:10]):
-            if 'the' in para or 'is' in para:
-                # print(f"\n🇬🇧 English sample text:\n{para}")
-                emb = self.embed_fn([para])[0]
-                # print(f"➡️ Embedding: {emb[:5]}...")  # show first 5 dimensions
-                break
-
-        # ✅ Now index to vector DB if not already
-        if self.collection.count() == 0:
-            self.collection.add(documents=paragraphs, ids=ids)
-            print(f"🔗 Indexed {len(paragraphs)} chunks from {len(PDF_PATHS)} PDFs.")
-        else:
-            print(f"ℹ️ Collection already contains {self.collection.count()} chunks.")
+        # Upsert to Pinecone
+        self.index.upsert(vectors=batch)
+        print(f"✅ Upserted {len(batch)} chunks to Pinecone index '{COLLECTION_NAME}'.")
 
     def retrieve(self, query, top_k=3):
-        result = self.collection.query(query_texts=[query], n_results=top_k)
-        return result["documents"][0] if result["documents"] else []
-    
+        query_vector = self.embedder.encode(query).tolist()
+        response = self.index.query(vector=query_vector, top_k=top_k, include_metadata=True)
 
-
-     # def build_vector_store(self):
-    #     paragraphs = self.extract_paragraphs()
-    #     ids = [f"chunk_{i}" for i in range(len(paragraphs))]
-
-    #     if self.collection.count() == 0:
-    #         self.collection.add(documents=paragraphs, ids=ids)
-    #         print(f"🔗 Indexed {len(paragraphs)} chunks from {len(PDF_PATHS)} PDFs.")
-    #     else:
-    #         print(f"ℹ️ Collection already contains {self.collection.count()} chunks.")
-    
+        if "matches" in response and response["matches"]:
+            return [match["metadata"]["text"] for match in response["matches"]]
+        return []

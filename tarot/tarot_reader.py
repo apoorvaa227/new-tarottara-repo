@@ -3,12 +3,12 @@ from functools import lru_cache
 
 from langchain_ollama import ChatOllama
 
-from config import MODEL_NAME
+from config import LLM_MODEL_NAME
 from tarot.deck import DATE_RANGES, FULL_DECK, NUMERIC_CARDS
 from intent.intent import normalize
 from tarot.rag import get_card_meaning
 
-llm = ChatOllama(model=MODEL_NAME)
+llm = ChatOllama(model=LLM_MODEL_NAME)
 
 
 def perform_reading(question: str, intent: str) -> dict:
