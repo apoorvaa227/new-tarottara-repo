@@ -23,7 +23,7 @@ PDF_PATHS = ["pdf_file/tarot_guide.pdf"]
 OPENAI_API_KEY = get_env("OPENAI_API_KEY")
 
 # LLM_MODEL_NAME = "llama3"
-# ***REMOVED***proj-8DwrHaF_q0Sgev76RjBPGPh_CjTiZOlQTz-_B_DrhmoCeIEa2FPFEp0D35GpC56QIPsT5t2i_1T3BlbkFJHAciLLcoU8tGMyKsvG3bLIYxToAFt8bqhQWey496eUmo46uRB8CExsB_jHfS9wx9jfDcAE9f0A
+
 # Pinecone Config
 PINECONE_API_KEY = get_env("PINECONE_API_KEY")
 PINECONE_REGION = get_env("PINECONE_REGION", "us-east-1")
