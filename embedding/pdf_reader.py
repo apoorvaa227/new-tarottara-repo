@@ -6,6 +6,7 @@ from config import (
     PDF_PATHS, PINECONE_API_KEY, PINECONE_REGION, PINECONE_CLOUD,
     COLLECTION_NAME, EMBEDDING_MODEL_NAME
 )
+from config import get_env
 
 class TarotPDFEmbedder:
     def __init__(self):
@@ -14,8 +15,10 @@ class TarotPDFEmbedder:
 
         # Init Pinecone client
         # self.pinecone = Pinecone(api_key=PINECONE_API_KEY)
-        self.pinecone = Pinecone()  # Let it auto-read from env or secrets
+        # self.pinecone = Pinecone()  # Let it auto-read from env or secrets
+          # add this import if not already present
 
+        self.pinecone = Pinecone(api_key=get_env("PINECONE_API_KEY"))
 
         # Create index if it doesn't exist
         if COLLECTION_NAME not in self.pinecone.list_indexes().names():

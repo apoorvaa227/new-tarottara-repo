@@ -252,7 +252,7 @@ if question:
                 st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
                 st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
 
-# Optional Clear Chat button
-if st.button("🔁 Clear Chat"):
-    st.session_state.messages = []
-    st.experimental_rerun()
+# # Optional Clear Chat button
+# if st.button("🔁 Clear Chat"):
+#     st.session_state.messages = []
+#     st.experimental_rerun()

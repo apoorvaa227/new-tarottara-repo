@@ -20,14 +20,18 @@ def get_env(key: str, default=None):
 # PDF + Embedding Config
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 PDF_PATHS = ["pdf_file/tarot_guide.pdf"]
-LLM_MODEL_NAME = "llama3"
+OPENAI_API_KEY = get_env("OPENAI_API_KEY")
 
+# LLM_MODEL_NAME = "llama3"
+# ***REMOVED***proj-8DwrHaF_q0Sgev76RjBPGPh_CjTiZOlQTz-_B_DrhmoCeIEa2FPFEp0D35GpC56QIPsT5t2i_1T3BlbkFJHAciLLcoU8tGMyKsvG3bLIYxToAFt8bqhQWey496eUmo46uRB8CExsB_jHfS9wx9jfDcAE9f0A
 # Pinecone Config
 PINECONE_API_KEY = get_env("PINECONE_API_KEY")
 PINECONE_REGION = get_env("PINECONE_REGION", "us-east-1")
 PINECONE_CLOUD = get_env("PINECONE_CLOUD", "aws")
 COLLECTION_NAME = get_env("PINECONE_INDEX_NAME", "tarottara-index")
 
+if not PINECONE_API_KEY:
+    raise ValueError("❌ PINECONE_API_KEY is missing. Check .env or .streamlit/secrets.toml.")
 # Others
 ASSEMBLYAI_API_KEY = get_env("ASSEMBLYAI_API_KEY")
 ELEVENLABS_API_KEY = get_env("ELEVENLABS_API_KEY")
