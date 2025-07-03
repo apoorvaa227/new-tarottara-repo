@@ -2,8 +2,7 @@ from embedding.pdf_reader import TarotPDFEmbedder
 
 embedder = TarotPDFEmbedder()
 
-query = "प्यार में सफलता कैसे मिले?"  # Hindi query
-results = embedder.retrieve(query)
+query = "प्यार में सफलता कैसे मिले?"  
 
 print("\n🔍 Top Matching Chunks:")
 for i, chunk in enumerate(results):
