@@ -20,7 +20,9 @@ def get_env(key: str, default=None):
 # PDF + Embedding Config
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 PDF_PATHS = ["pdf_file/tarot_guide.pdf"]
-OPENAI_API_KEY = get_env("OPENAI_API_KEY")
+# config.py
+OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")
+
 
 # LLM_MODEL_NAME = "llama3"
 
