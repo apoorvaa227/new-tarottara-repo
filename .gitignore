@@ -32,3 +32,4 @@ htmlcov/
 
 # Local Python configuration
 .python-version
+.streamlit\secrets.toml
