@@ -57,11 +57,11 @@ def get_env(key: str, default=None):
 
 
 # LLM / API Keys
-OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")
+# OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")  # No longer needed, using Groq
 GROQ_API_KEY = get_env("GROQ_API_KEY")
 
-if not OPENROUTER_API_KEY:
-    raise ValueError("❌ OPENROUTER_API_KEY not found. Check .env or secrets.toml.")
+# if not OPENROUTER_API_KEY:
+#     raise ValueError("❌ OPENROUTER_API_KEY not found. Check .env or secrets.toml.")
 if not GROQ_API_KEY:
     raise ValueError("❌ GROQ_API_KEY not found. Check .env or secrets.toml.")
 

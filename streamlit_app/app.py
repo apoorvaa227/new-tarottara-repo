@@ -1,4 +1,3 @@
-
 # import sys
 # import os
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
@@ -128,7 +127,29 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import time
 import streamlit as st
 from fpdf import FPDF
-from utils.language_detection import detect_language_with_groq, get_language_name, normalize_language_for_translation
+
+# Safe imports with fallbacks
+try:
+    from utils.language_detection import detect_language_with_groq, get_language_name, normalize_language_for_translation
+    LANGUAGE_DETECTION_AVAILABLE = True
+except ImportError:
+    # Fallback functions if language detection is not available
+    def detect_language_with_groq(text):
+        try:
+            from langdetect import detect
+            return detect(text), 0.8
+        except ImportError:
+            return "en", 0.5
+    
+    def get_language_name(lang_code):
+        names = {'en': 'English', 'hi': 'Hindi', 'es': 'Spanish', 'fr': 'French'}
+        return names.get(lang_code, lang_code.upper())
+    
+    def normalize_language_for_translation(lang_code):
+        return lang_code
+    
+    LANGUAGE_DETECTION_AVAILABLE = False
+
 from deep_translator import GoogleTranslator
 from intent.intent import classify_intent
 from tarot.tarot_reader import cached_reading
@@ -137,6 +158,26 @@ from voice.input import record_from_mic, transcribe_audio
 from voice.output import synthesize_voice, play_voice_response
 from fpdf.enums import XPos, YPos
 from utils.llm_chat import generate_conversational_response
+
+# Wrapper function for backward compatibility
+def safe_generate_conversational_response(message: str, user_info: dict = None, detected_lang: str = "en") -> str:
+    """
+    Safe wrapper for generate_conversational_response with backward compatibility.
+    """
+    try:
+        # Try the new signature
+        return generate_conversational_response(message, user_info, detected_lang)
+    except TypeError as e:
+        # If TypeError, try with fewer arguments
+        try:
+            return generate_conversational_response(message, user_info)
+        except TypeError:
+            # Last resort: original single argument
+            return generate_conversational_response(message)
+    except Exception as e:
+        # If all else fails, return a default response
+        user_name = user_info.get("name", "friend") if user_info else "friend"
+        return f"Hello {user_name}! I'm here to help you with your tarot questions. How can I assist you today?"
 # from dotenv import load_dotenv
 # load_dotenv()
 # GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -255,26 +296,49 @@ if question:
         st.markdown(question)
 
     with st.spinner("Analyzing your question..."):
-        # Advanced language detection using Groq
-        detected_lang, confidence = detect_language_with_groq(question)
-        
-        # Show language detection info in sidebar or as expandable info
-        with st.expander("🌍 Language Detection"):
-            st.write(f"**Detected Language:** {get_language_name(detected_lang)}")
-            st.write(f"**Confidence:** {confidence:.2f}")
-            if detected_lang.endswith('_rom'):
-                st.info(f"📝 Detected romanized text in {get_language_name(detected_lang.replace('_rom', ''))} language")
+        # Advanced language detection using Groq (with fallback)
+        try:
+            detected_lang, confidence = detect_language_with_groq(question)
+            
+            # Show language detection info in sidebar or as expandable info
+            if LANGUAGE_DETECTION_AVAILABLE:
+                with st.expander("🌍 Language Detection"):
+                    st.write(f"**Detected Language:** {get_language_name(detected_lang)}")
+                    st.write(f"**Confidence:** {confidence:.2f}")
+                    if detected_lang.endswith('_rom'):
+                        st.info(f"📝 Detected romanized text in {get_language_name(detected_lang.replace('_rom', ''))} language")
+        except Exception as e:
+            st.warning(f"Language detection unavailable, using basic detection: {e}")
+            # Fallback to simple language detection
+            try:
+                from langdetect import detect
+                detected_lang = detect(question)
+                confidence = 0.8
+            except ImportError:
+                detected_lang = "en"
+                confidence = 0.5
         
         # Normalize language for translation
-        translation_lang = normalize_language_for_translation(detected_lang)
-        translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
+        try:
+            translation_lang = normalize_language_for_translation(detected_lang)
+            translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
+        except Exception as e:
+            st.warning(f"Translation failed, using original question: {e}")
+            translated_question = question
+            detected_lang = "en"
 
         intent_start = time.time()
         intent = classify_intent(translated_question)
         intent_duration = time.time() - intent_start
 
         if intent == "conversation":
-            final_answer = generate_conversational_response(translated_question, st.session_state.user_info, detected_lang)
+            try:
+                final_answer = safe_generate_conversational_response(translated_question, st.session_state.user_info, detected_lang)
+            except Exception as e:
+                st.error(f"Error generating response: {e}")
+                user_name = st.session_state.user_info.get("name", "friend")
+                final_answer = f"Hello {user_name}! I'm having trouble generating a response right now, but I'm here to help you with your tarot questions."
+            
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
             with st.chat_message("assistant"):
               st.markdown(final_answer)
@@ -283,7 +347,20 @@ if question:
             prediction_start = time.time()
             user_name = st.session_state.user_info.get("name", "")
             user_gender = st.session_state.user_info.get("gender", "")
-            result = cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
+            
+            try:
+                # Try with the new signature including detected_lang
+                result = cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
+            except TypeError:
+                # Fallback to old signature without detected_lang
+                try:
+                    result = cached_reading(translated_question, intent, user_name, user_gender)
+                except TypeError:
+                    # Fallback to even older signature
+                    result = cached_reading(translated_question, intent)
+            except Exception as e:
+                result = {"error": f"Reading generation failed: {e}"}
+            
             prediction_duration = time.time() - prediction_start
 
             if "error" in result:

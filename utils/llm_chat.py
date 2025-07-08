@@ -19,6 +19,17 @@ MODEL_NAME =  "llama3-70b-8192"
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 def generate_conversational_response(message: str, user_info: dict = None, detected_lang: str = "en") -> str:
+    """
+    Generate conversational response with backward compatibility.
+    Can be called with 1, 2, or 3 arguments.
+    """
+    # Handle backward compatibility - if user_info is a string, it's the old calling pattern
+    if isinstance(user_info, str):
+        # Old calling pattern: generate_conversational_response(message)
+        # In this case, user_info is actually None and detected_lang is the user_info
+        detected_lang = "en"
+        user_info = None
+    
     user_name = user_info.get("name", "friend") if user_info else "friend"
     user_gender = user_info.get("gender", "").lower() if user_info else ""
     
