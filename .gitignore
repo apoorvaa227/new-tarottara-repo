@@ -20,7 +20,6 @@ venv/
 .DS_Store
 
 # PDFs or large binary files (optional)
-*.pdf
 
 # Log and database files (optional if generated)
 *.log

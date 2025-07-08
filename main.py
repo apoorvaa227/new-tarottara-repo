@@ -6,7 +6,7 @@ from intent.intent import classify_intent_cached
 from tarot.tarot_reader import cached_reading
 from voice.input import record_from_mic, transcribe_audio
 from voice.output import synthesize_voice, play_voice_response
-from langdetect import detect
+from utils.language_detection import detect_language_with_groq, get_language_name, normalize_language_for_translation
 from deep_translator import GoogleTranslator
 from user_info.user_info import collect_user_info  
 from utils.decorators import log_timing
@@ -14,11 +14,14 @@ from utils.decorators import log_timing
 #  also in constant 
 def main():
     print("\U0001f52e Welcome to TarotTara – your magical tarot guide (type 'exit' to quit)\n")
-    collect_user_info()
+    
+    # Collect mandatory user info
+    user_info = collect_user_info()
+    user_name = user_info["name"]
+    user_gender = user_info["gender"]
+    user_language = user_info["language"]
 
-    # Ask user for their preferred language
-    user_language = input("Please select your language (en, hi, es, fr): ").strip().lower()
-    print("\n✨ Thank you! How can I help you today?\n")
+    print(f"\n✨ Thank you {user_name}! How can I help you today?\n")
 
     while True:
         print("\n🎧 You may (1) Speak into mic, (2) Upload audio, or (3) Type your question.")
@@ -54,9 +57,13 @@ def main():
 
         total_start = time.time()
 
-        # Detect language and translate question to English if needed
-        from_lang = detect(question)
-        translated_question = GoogleTranslator(source='auto', target='en').translate(question) if from_lang != "en" else question
+        # Advanced language detection using Groq
+        detected_lang, confidence = detect_language_with_groq(question)
+        print(f"🌍 Detected language: {get_language_name(detected_lang)} (confidence: {confidence:.2f})")
+        
+        # Normalize language for translation
+        translation_lang = normalize_language_for_translation(detected_lang)
+        translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
         #  python decorator 
         # Intent classification
         intent_start = time.time()
@@ -65,7 +72,7 @@ def main():
         print(f"\n✨ Intent detected: {intent} (in {intent_duration:.2f} sec)")
 
         timed_cached_reading = log_timing("🔮 Tarot reading")(cached_reading)
-        result, prediction_duration = timed_cached_reading(translated_question, intent)
+        result, prediction_duration = timed_cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
 
         if "error" in result:
             print(f"⚠️ Error: {result['error']}")
@@ -73,7 +80,7 @@ def main():
         # decorator in reading 
         answer_en = result["interpretation"]
 
-        print("\n🔍 TarotTara says:")
+        print(f"\n🔍 TarotTara's reading for {user_name}:")
         #  crash problem 
         if intent == "timeline":
             card = result["card"]
@@ -81,14 +88,14 @@ def main():
             print(f"Card: {card}")
             print(f"Timeframe: {date_range[0].strftime('%B %#d')} – {date_range[1].strftime('%B %#d')}")
         elif intent == "factual":
-            print("\nAnswer:")
+            print(f"\nAnswer for {user_name}:")
         else:
             cards = result.get("cards", [])
-            print(f"Cards Drawn: {', '.join(cards)}")
+            print(f"Cards Drawn for {user_name}: {', '.join(cards)}")
     
         # Translate back to user's preferred language
         final_answer = GoogleTranslator(source='en', target=user_language).translate(answer_en) if user_language != "en" else answer_en
-        print(f"\n🕡 TarotTara ({user_language}):\n{final_answer}")
+        print(f"\n🕡 TarotTara to {user_name} ({user_language}):\n{final_answer}")
 
         # Voice generation
         # try:
