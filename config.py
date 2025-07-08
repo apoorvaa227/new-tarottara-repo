@@ -21,8 +21,11 @@ def get_env(key: str, default=None):
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 PDF_PATHS = ["pdf_file/tarot_guide.pdf"]
 # config.py
-OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")
 
+OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")
+GROQ_API_KEY = get_env("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("❌ GROQ_API_KEY not found in environment. Please set it in your .env file.")
 
 # LLM_MODEL_NAME = "llama3"
 

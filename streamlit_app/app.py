@@ -122,7 +122,6 @@
 #             st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
 #             st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
 
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
@@ -131,16 +130,19 @@ import streamlit as st
 from fpdf import FPDF
 from langdetect import detect
 from deep_translator import GoogleTranslator
-from intent.intent import classify_intent_cached
+from intent.intent import classify_intent
 from tarot.tarot_reader import cached_reading
+from ai_request import send_chat_log
 from voice.input import record_from_mic, transcribe_audio
 from voice.output import synthesize_voice, play_voice_response
 from fpdf.enums import XPos, YPos
+from utils.llm_chat import generate_conversational_response
+
 
 st.set_page_config(page_title="TarotTara - Your Magical Guide", layout="centered")
 st.title("🔮 TarotTara – Your Magical Tarot Guide")
 
-# Session state for user info and language
+# Session state
 if "user_info" not in st.session_state:
     st.session_state.user_info = {}
 if "language" not in st.session_state:
@@ -148,7 +150,7 @@ if "language" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Function to collect user info
+# Sidebar: User Info Form
 with st.sidebar:
     st.header("📋 User Info")
     with st.form("user_form"):
@@ -187,7 +189,7 @@ with st.sidebar:
         filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
         pdf.output(filename)
 
-# Show chat history
+# Chat Interface
 st.subheader("🧘 Ask your question")
 input_method = st.radio("Choose input method", ["Type", "Upload Audio"])
 
@@ -205,6 +207,7 @@ elif input_method == "Upload Audio":
             question = transcribe_audio(audio_file)
             st.success(f"✅ You said: {question}")
 
+# Handle question
 if question:
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
@@ -215,44 +218,45 @@ if question:
         translated_question = GoogleTranslator(source='auto', target='en').translate(question) if detected_lang != "en" else question
 
         intent_start = time.time()
-        intent = classify_intent_cached(translated_question)
+        intent = classify_intent(translated_question)
         intent_duration = time.time() - intent_start
 
-        prediction_start = time.time()
-        result = cached_reading(translated_question, intent)
-        prediction_duration = time.time() - prediction_start
-
-        if "error" in result:
-            st.error(f"⚠️ Error: {result['error']}")
-        else:
-            answer_en = result["interpretation"]
-            user_lang = st.session_state.language
-            final_answer = GoogleTranslator(source='en', target=user_lang).translate(answer_en) if user_lang != "en" else answer_en
-
-            # Save bot response to session
+        if intent == "conversation":
+            final_answer = generate_conversational_response(translated_question)
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
             with st.chat_message("assistant"):
-                st.markdown("### 🔍 TarotTara says:")
+              st.markdown(final_answer)
+              st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
+        else:
+            prediction_start = time.time()
+            result = cached_reading(translated_question, intent)
+            prediction_duration = time.time() - prediction_start
 
-                if intent == "timeline":
-                    card = result.get("card", "")
-                    date_range = result.get("date_range", ["", ""])
-                    st.write(f"**Card:** {card}")
-                    st.write(f"**Timeframe:** {date_range[0].strftime('%B %d')} – {date_range[1].strftime('%B %d')}")
+            if "error" in result:
+                st.error(f"⚠️ Error: {result['error']}")
+            else:
+                answer_en = result["interpretation"]
+                user_lang = st.session_state.language
+                final_answer = GoogleTranslator(source='en', target=user_lang).translate(answer_en) if user_lang != "en" else answer_en
+                send_chat_log(question=translated_question, answer=answer_en, intent_type=intent, duration=prediction_duration)
 
-                elif intent == "factual":
-                    st.write("**Answer:**")
-                else:
-                    cards = result.get("cards", [])
-                    if cards:
-                        st.write(f"**Cards Drawn:** {', '.join(cards)}")
+                st.session_state.messages.append({"role": "assistant", "content": final_answer})
+                with st.chat_message("assistant"):
+                    st.markdown("### 🔍 TarotTara says:")
 
-                st.success(final_answer)
+                    if intent == "timeline":
+                        card = result.get("card", "")
+                        date_range = result.get("date_range", ["", ""])
+                        st.write(f"**Card:** {card}")
+                        st.write(f"**Timeframe:** {date_range[0].strftime('%B %d')} – {date_range[1].strftime('%B %d')}")
 
-                st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
-                st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
+                    elif intent == "factual":
+                        st.write("**Answer:**")
+                    else:
+                        cards = result.get("cards", [])
+                        if cards:
+                            st.write(f"**Cards Drawn:** {', '.join(cards)}")
 
-# # Optional Clear Chat button
-# if st.button("🔁 Clear Chat"):
-#     st.session_state.messages = []
-#     st.experimental_rerun()
+                    st.success(final_answer)
+                    st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
+                    st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
