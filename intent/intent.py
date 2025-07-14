@@ -5,6 +5,7 @@ import requests
 from functools import lru_cache
 import streamlit as st
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()
 
@@ -24,6 +25,21 @@ def normalize(text: str) -> str:
 MODEL_NAME =  "llama3-70b-8192"
 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = get_env("GROQ_API_KEY")
+
+headers = {
+    "Authorization": f"Bearer {GROQ_API_KEY}",
+    "Content-Type": "application/json"
+}
+
+def debug_log_error(context: str, error: Exception):
+    print(f"❌ [{context}] Exception: {error}")
+    print(traceback.format_exc())
+    if hasattr(error, 'response') and error.response is not None:
+        try:
+            print("🔎 Response content:", error.response.text)
+        except Exception as parse_error:
+            print("⚠️ Could not parse error response:", parse_error)
 
 def classify_intent(question: str) -> str:
     # Direct pattern check for conversation
@@ -43,11 +59,6 @@ def classify_intent(question: str) -> str:
         f"Q: {question}\nA:"
     )
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
     data = {
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": prompt}],
@@ -60,16 +71,10 @@ def classify_intent(question: str) -> str:
         response.raise_for_status()
         intent = response.json()["choices"][0]["message"]["content"].strip().lower()
         valid_intents = {"yes_no", "timeline", "insight", "guidance", "factual", "conversation"}
-        print(response.json())
         return intent if intent in valid_intents else "general"
     except Exception as e:
-       print("❌ Error in intent classification:", e)
-       if hasattr(e, 'response') and e.response is not None:
-           try:
-            print("🔎 Response content:", e.response.text)
-           except Exception as parse_error:
-            print("⚠️ Could not parse error response:", parse_error)
-       return "general"
+        debug_log_error("Intent Classification", e)
+        return "general"
 
 # ✅ Cached version of classify_intent
 @lru_cache(maxsize=1000)

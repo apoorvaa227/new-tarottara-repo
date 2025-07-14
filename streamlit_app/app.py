@@ -120,14 +120,13 @@
 
 #             st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
 #             st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import time
 import streamlit as st
 from fpdf import FPDF
-
+import traceback
 # Safe imports with fallbacks
 try:
     from utils.language_detection import detect_language_with_groq, get_language_name, normalize_language_for_translation
@@ -159,6 +158,19 @@ from voice.output import synthesize_voice, play_voice_response
 from fpdf.enums import XPos, YPos
 from utils.llm_chat import generate_conversational_response
 
+# Add the new multimodal import
+from utils.image_processing import process_image_with_question
+
+# Simple debug logger for errors
+def debug_log_error(context: str, error: Exception):
+    print(f"❌ [{context}] Exception: {error}")
+    print(traceback.format_exc())
+    if hasattr(error, 'response') and error.response is not None:
+        try:
+            print("🔎 Response content:", error.response.text)
+        except Exception as parse_error:
+            print("⚠️ Could not parse error response:", parse_error)
+
 # Wrapper function for backward compatibility
 def safe_generate_conversational_response(message: str, user_info: dict = None, detected_lang: str = "en") -> str:
     """
@@ -178,10 +190,6 @@ def safe_generate_conversational_response(message: str, user_info: dict = None, 
         # If all else fails, return a default response
         user_name = user_info.get("name", "friend") if user_info else "friend"
         return f"Hello {user_name}! I'm here to help you with your tarot questions. How can I assist you today?"
-# from dotenv import load_dotenv
-# load_dotenv()
-# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
 
 st.set_page_config(page_title="TarotTara - Your Magical Guide", layout="centered")
 st.title("🔮 TarotTara – Your Magical Tarot Guide")
@@ -241,19 +249,19 @@ with st.sidebar:
                 "language": language
             }
             st.session_state.user_info = user_info
-        st.session_state.language = language
-        st.success("User info saved successfully!")
+            st.session_state.language = language
+            st.success("User info saved successfully!")
 
-        os.makedirs("user_logs", exist_ok=True)
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Helvetica", size=12)
-        pdf.cell(200, 10, txt="TarotTara User Log", ln=True, align="C")
-        pdf.ln(10)
-        for key, value in user_info.items():
-            pdf.cell(200, 10, txt=f"{key.title()}: {value}", ln=True)
-        filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
-        pdf.output(filename)
+            os.makedirs("user_logs", exist_ok=True)
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", size=12)
+            pdf.cell(200, 10, txt="TarotTara User Log", ln=True, align="C")
+            pdf.ln(10)
+            for key, value in user_info.items():
+                pdf.cell(200, 10, txt=f"{key.title()}: {value}", ln=True)
+            filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
+            pdf.output(filename)
 
 # Chat Interface
 user_info_complete = (
@@ -273,13 +281,15 @@ if not st.session_state.messages:
     welcome_msg = f"Hello {user_name}! I'm TarotTara, your personal tarot guide. How can I help you today?"
     st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
 
-input_method = st.radio("Choose input method", ["Type", "Upload Audio"])
+input_method = st.radio("Choose input method", ["Type", "Upload Audio", "Upload Image"])
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 question = ""
+uploaded_image = None
+
 if input_method == "Type":
     question = st.chat_input("Type your question below:")
 elif input_method == "Upload Audio":
@@ -288,106 +298,140 @@ elif input_method == "Upload Audio":
         with st.spinner("Transcribing your audio..."):
             question = transcribe_audio(audio_file)
             st.success(f"✅ You said: {question}")
+elif input_method == "Upload Image":
+    uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+    if uploaded_image:
+        st.image(uploaded_image, caption="Your uploaded image", use_column_width=True)
+        question = st.text_input("Ask a question about this image:")
 
 # Handle question
-if question:
+if question and (input_method != "Upload Image" or uploaded_image is not None):
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
+        if uploaded_image:
+            st.image(uploaded_image, caption="User's image", width=200)
         st.markdown(question)
 
     with st.spinner("Analyzing your question..."):
-        # Advanced language detection using Groq (with fallback)
-        try:
-            detected_lang, confidence = detect_language_with_groq(question)
-            
-            # Show language detection info in sidebar or as expandable info
-            if LANGUAGE_DETECTION_AVAILABLE:
-                with st.expander("🌍 Language Detection"):
-                    st.write(f"**Detected Language:** {get_language_name(detected_lang)}")
-                    st.write(f"**Confidence:** {confidence:.2f}")
-                    if detected_lang.endswith('_rom'):
-                        st.info(f"📝 Detected romanized text in {get_language_name(detected_lang.replace('_rom', ''))} language")
-        except Exception as e:
-            st.warning(f"Language detection unavailable, using basic detection: {e}")
-            # Fallback to simple language detection
+        if uploaded_image:
+            # Handle image + text input
             try:
-                from langdetect import detect
-                detected_lang = detect(question)
-                confidence = 0.8
-            except ImportError:
-                detected_lang = "en"
-                confidence = 0.5
-        
-        # Normalize language for translation
-        try:
-            translation_lang = normalize_language_for_translation(detected_lang)
-            translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
-        except Exception as e:
-            st.warning(f"Translation failed, using original question: {e}")
-            translated_question = question
-            detected_lang = "en"
-
-        intent_start = time.time()
-        intent = classify_intent(translated_question)
-        intent_duration = time.time() - intent_start
-
-        if intent == "conversation":
-            try:
-                final_answer = safe_generate_conversational_response(translated_question, st.session_state.user_info, detected_lang)
-            except Exception as e:
-                st.error(f"Error generating response: {e}")
-                user_name = st.session_state.user_info.get("name", "friend")
-                final_answer = f"Hello {user_name}! I'm having trouble generating a response right now, but I'm here to help you with your tarot questions."
-            
-            st.session_state.messages.append({"role": "assistant", "content": final_answer})
-            with st.chat_message("assistant"):
-              st.markdown(final_answer)
-              st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
-        else:
-            prediction_start = time.time()
-            user_name = st.session_state.user_info.get("name", "")
-            user_gender = st.session_state.user_info.get("gender", "")
-            
-            try:
-                # Try with the new signature including detected_lang
-                result = cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
-            except TypeError:
-                # Fallback to old signature without detected_lang
-                try:
-                    result = cached_reading(translated_question, intent, user_name, user_gender)
-                except TypeError:
-                    # Fallback to even older signature
-                    result = cached_reading(translated_question, intent)
-            except Exception as e:
-                result = {"error": f"Reading generation failed: {e}"}
-            
-            prediction_duration = time.time() - prediction_start
-
-            if "error" in result:
-                st.error(f"⚠️ Error: {result['error']}")
-            else:
-                answer_en = result["interpretation"]
+                image_bytes = uploaded_image.read()
+                final_answer = process_image_with_question(image_bytes, question, st.session_state.user_info)
+                
+                # Translate to user's preferred language if needed
                 user_lang = st.session_state.language
-                final_answer = GoogleTranslator(source='en', target=user_lang).translate(answer_en) if user_lang != "en" else answer_en
-                send_chat_log(question=translated_question, answer=answer_en, intent_type=intent, duration=prediction_duration)
-
+                if user_lang != "en":
+                    try:
+                        final_answer = GoogleTranslator(source='en', target=user_lang).translate(final_answer)
+                    except Exception as e:
+                        st.warning(f"Translation failed: {e}")
+                
                 st.session_state.messages.append({"role": "assistant", "content": final_answer})
                 with st.chat_message("assistant"):
-                    st.markdown(f"### 🔍 TarotTara's reading for {user_name}:")
+                    st.markdown(f"### 🔍 TarotTara's vision for {user_name}:")
+                    st.markdown(final_answer)
+                
+            except Exception as e:
+                debug_log_error("Image Processing", e)
+                st.error(f"Error processing image: {e}")
+        else:
+            # Advanced language detection using Groq (with fallback)
+            try:
+                detected_lang, confidence = detect_language_with_groq(question)
+                
+                # Show language detection info in sidebar or as expandable info
+                if LANGUAGE_DETECTION_AVAILABLE:
+                    with st.expander("🌍 Language Detection"):
+                        st.write(f"**Detected Language:** {get_language_name(detected_lang)}")
+                        st.write(f"**Confidence:** {confidence:.2f}")
+                        if detected_lang.endswith('_rom'):
+                            st.info(f"📝 Detected romanized text in {get_language_name(detected_lang.replace('_rom', ''))} language")
+            except Exception as e:
+                st.warning(f"Language detection unavailable, using basic detection: {e}")
+                # Fallback to simple language detection
+                try:
+                    from langdetect import detect
+                    detected_lang = detect(question)
+                    confidence = 0.8
+                except ImportError:
+                    detected_lang = "en"
+                    confidence = 0.5
+            
+            # Normalize language for translation
+            try:
+                translation_lang = normalize_language_for_translation(detected_lang)
+                translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
+            except Exception as e:
+                st.warning(f"Translation failed, using original question: {e}")
+                translated_question = question
+                detected_lang = "en"
 
-                    if intent == "timeline":
-                        card = result.get("card", "")
-                        date_range = result.get("date_range", ["", ""])
-                        st.write(f"**Card:** {card}")
-                        st.write(f"**Timeframe:** {date_range[0].strftime('%B %d')} – {date_range[1].strftime('%B %d')}")
+            intent_start = time.time()
+            intent = classify_intent(translated_question)
+            intent_duration = time.time() - intent_start
 
-                    elif intent == "factual":
-                        st.write(f"**Answer for {user_name}:**")
-                    else:
-                        cards = result.get("cards", [])
-                        if cards:
-                            st.write(f"**Cards Drawn for {user_name}:** {', '.join(cards)}")
+            if intent == "conversation":
+                try:
+                    final_answer = safe_generate_conversational_response(translated_question, st.session_state.user_info, detected_lang)
+                except Exception as e:
+                    st.error(f"Error generating response: {e}")
+                    user_name = st.session_state.user_info.get("name", "friend")
+                    final_answer = f"Hello {user_name}! I'm having trouble generating a response right now, but I'm here to help you with your tarot questions."
+                
+                st.session_state.messages.append({"role": "assistant", "content": final_answer})
+                with st.chat_message("assistant"):
+                  st.markdown(final_answer)
+                  st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
+            else:
+                prediction_start = time.time()
+                user_name = st.session_state.user_info.get("name", "")
+                user_gender = st.session_state.user_info.get("gender", "")
+                
+                try:
+                    # Try with the new signature including detected_lang
+                    result = cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
+                except TypeError:
+                    # Fallback to old signature without detected_lang
+                    try:
+                        result = cached_reading(translated_question, intent, user_name, user_gender)
+                    except TypeError:
+                        # Fallback to even older signature
+                        result = cached_reading(translated_question, intent)
+                except Exception as e:
+                    debug_log_error("Tarot Reading", e)
+                    result = {"error": f"Reading generation failed: {e}"}
+                
+                prediction_duration = time.time() - prediction_start
 
-                    st.success(final_answer)
-                    st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
-                    st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")
+                if "error" in result:
+                    st.error(f"⚠️ Error: {result['error']}")
+                else:
+                    answer_en = result["interpretation"]
+                    user_lang = st.session_state.language
+                    final_answer = GoogleTranslator(source='en', target=user_lang).translate(answer_en) if user_lang != "en" else answer_en
+                    send_chat_log(question=translated_question, answer=answer_en, intent_type=intent, duration=prediction_duration)
+
+                    st.session_state.messages.append({"role": "assistant", "content": final_answer})
+                    with st.chat_message("assistant"):
+                        st.markdown(f"### 🔍 TarotTara's reading for {user_name}:")
+
+                        if intent == "timeline":
+                            card = result.get("card", "")
+                            date_range = result.get("date_range", ["", ""])
+                            st.write(f"**Card:** {card}")
+                            st.write(f"**Timeframe:** {date_range[0].strftime('%B %d')} – {date_range[1].strftime('%B %d')}")
+
+                        elif intent == "factual":
+                            st.write(f"**Answer for {user_name}:**")
+                        else:
+                            cards = result.get("cards", [])
+                            if cards:
+                                if len(cards) == 1:
+                                    st.write(f"**Card Drawn for {user_name}:** {cards[0]}")
+                                else:
+                                    st.write(f"**Cards Drawn for {user_name}:** {', '.join(cards)}")
+
+                        st.success(final_answer)
+                        st.markdown(f"⏱️ **Intent classification:** {intent_duration:.2f}s")
+                        st.markdown(f"⏱️ **Prediction (LLM + RAG):** {prediction_duration:.2f}s")

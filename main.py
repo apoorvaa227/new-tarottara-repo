@@ -1,5 +1,7 @@
 import os
 import time
+import base64
+import traceback
 from fpdf import FPDF
 from playsound import playsound
 from intent.intent import classify_intent_cached
@@ -10,6 +12,18 @@ from utils.language_detection import detect_language_with_groq, get_language_nam
 from deep_translator import GoogleTranslator
 from user_info.user_info import collect_user_info  
 from utils.decorators import log_timing
+
+# Add the new multimodal import
+from utils.llm_chat import process_image_with_question
+
+def debug_log_error(context: str, error: Exception):
+    print(f"❌ [{context}] Exception: {error}")
+    print(traceback.format_exc())
+    if hasattr(error, 'response') and error.response is not None:
+        try:
+            print("🔎 Response content:", error.response.text)
+        except Exception as parse_error:
+            print("⚠️ Could not parse error response:", parse_error)
 
 #  also in constant 
 def main():
@@ -24,10 +38,12 @@ def main():
     print(f"\n✨ Thank you {user_name}! How can I help you today?\n")
 
     while True:
-        print("\n🎧 You may (1) Speak into mic, (2) Upload audio, or (3) Type your question.")
-        choice = input("Choose input method [1/2/3]: ").strip()
+        print("\n🎧 You may (1) Speak into mic, (2) Upload audio, (3) Type your question, or (4) Upload image with question.")
+        choice = input("Choose input method [1/2/3/4]: ").strip()
 
         question = None
+        image_path = None
+        
         if choice == "1":
             question = record_from_mic()
             if not question:
@@ -47,15 +63,52 @@ def main():
                 continue
         elif choice == "3":
             question = input("\n🧘 Ask your question:\n> ")
+        elif choice == "4":
+            image_path = input("Enter path to image file (.jpg, .jpeg, .png): ").strip()
+            if not os.path.exists(image_path):
+                print("❌ Image file not found. Please try again.")
+                continue
+            question = input("💭 Ask a question about this image: ").strip()
+            if not question:
+                print("❌ Please enter a question about the image.")
+                continue
         else:
-            print("❌ Invalid choice. Please select 1, 2 or 3.")
+            print("❌ Invalid choice. Please select 1, 2, 3, or 4.")
             continue
 
-        if question.lower() in {"exit", "quit"}:
+        if question and question.lower() in {"exit", "quit"}:
             print("🌙 Farewell. Trust the journey ahead.")
             break
 
         total_start = time.time()
+
+        # Handle image + question with multimodal AI
+        if image_path:
+            try:
+                print("🔍 Analyzing your image and question with AI vision...")
+                with open(image_path, "rb") as img_file:
+                    image_data = base64.b64encode(img_file.read()).decode('utf-8')
+                
+                final_answer = process_image_with_question(image_data, question, user_info)
+                
+                # Translate response to user's language if needed
+                if user_language != "en":
+                    try:
+                        final_answer = GoogleTranslator(source='en', target=user_language).translate(final_answer)
+                    except Exception as e:
+                        print(f"⚠️ Translation failed: {e}")
+                
+                print(f"\n🔮 TarotTara's vision for {user_name}:")
+                print(final_answer)
+                
+                total_duration = time.time() - total_start
+                print(f"\n⏱️ Total time: {total_duration:.2f} sec")
+                continue
+                
+            except Exception as e:
+                debug_log_error("Image Processing", e)
+                print(f"⚠️ Error processing image: {e}")
+                continue
 
         # Advanced language detection using Groq
         detected_lang, confidence = detect_language_with_groq(question)
@@ -75,6 +128,7 @@ def main():
         result, prediction_duration = timed_cached_reading(translated_question, intent, user_name, user_gender, detected_lang)
 
         if "error" in result:
+            debug_log_error("Tarot Reading", e)
             print(f"⚠️ Error: {result['error']}")
             continue
         # decorator in reading 
@@ -91,7 +145,10 @@ def main():
             print(f"\nAnswer for {user_name}:")
         else:
             cards = result.get("cards", [])
-            print(f"Cards Drawn for {user_name}: {', '.join(cards)}")
+            if len(cards) == 1:
+                print(f"Card Drawn for {user_name}: {cards[0]}")
+            else:
+                print(f"Cards Drawn for {user_name}: {', '.join(cards)}")
     
         # Translate back to user's preferred language
         final_answer = GoogleTranslator(source='en', target=user_language).translate(answer_en) if user_language != "en" else answer_en

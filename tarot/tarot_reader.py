@@ -1,4 +1,3 @@
-
 # import random
 # from functools import lru_cache
 # # from langchain.chat_models import ChatOpenAI
@@ -87,11 +86,13 @@
 #     return perform_reading(question, intent)
 import sys
 import os
+from datetime import datetime
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import requests
 
 import random
 from functools import lru_cache
+import traceback
 
 from config import GROQ_API_KEY
 from tarot.deck import DATE_RANGES, FULL_DECK, NUMERIC_CARDS
@@ -217,13 +218,146 @@ def perform_reading(question: str, intent: str, user_info: dict = None, detected
 # ✅ Cache the reading
 @lru_cache(maxsize=1000)
 def cached_reading(question: str, intent: str, user_name: str = "", user_gender: str = "", detected_lang: str = "en") -> dict:
-    question = normalize(question)
-    intent = normalize(intent)
+    """
+    Generate a tarot reading based on the question and intent.
+    """
+    # Check if user specifically requested one card
+    question_lower = question.lower()
+    single_card_keywords = ['one card', 'single card', 'draw one', 'pull one', 'just one card', 'only one card']
     
-    # Reconstruct user_info from parameters for caching
-    user_info = {
-        "name": user_name,
-        "gender": user_gender
-    } if user_name else None
+    if any(keyword in question_lower for keyword in single_card_keywords):
+        # Draw only one card
+        card = random.choice(FULL_DECK)
+        cards = [card]
+        num_cards = 1
+    else:
+        # Default behavior - draw 3 cards
+        if intent == "timeline":
+            card = random.choice(NUMERIC_CARDS)
+            date_range = random.choice(DATE_RANGES)
+            return {
+                "card": card,
+                "date_range": date_range,
+                "interpretation": generate_reading(
+                    question=question,
+                    cards=[card],
+                    card_meanings=[f"{card}: {get_card_meaning(card)}"],
+                    intent=intent,
+                    user_name=user_name,
+                    user_gender=user_gender,
+                    detected_lang=detected_lang
+                )
+            }
+        else:
+            cards = random.sample(FULL_DECK, 3)
+            num_cards = 3
     
-    return perform_reading(question, intent, user_info, detected_lang)
+    # Get card meanings
+    card_meanings = []
+    for card in cards:
+        try:
+            meaning = get_card_meaning(card)
+            card_meanings.append(f"{card}: {meaning}")
+        except Exception as e:
+            card_meanings.append(f"{card}: Traditional tarot meaning")
+    
+    # Generate interpretation
+    interpretation = generate_reading(
+        question=question,
+        cards=cards,
+        card_meanings=card_meanings,
+        intent=intent,
+        user_name=user_name,
+        user_gender=user_gender,
+        detected_lang=detected_lang
+    )
+    
+    return {
+        "cards": cards,
+        "card_meanings": card_meanings,
+        "interpretation": interpretation
+    }
+
+# Update the generate_reading function to handle single vs multiple cards
+
+def generate_reading(question: str, cards: list, card_meanings: list, intent: str, user_name: str, user_gender: str, detected_lang: str) -> str:
+    """Generate a tarot reading using the LLM."""
+    
+    # Determine if this is a single card or multiple card reading
+    is_single_card = len(cards) == 1
+    
+    if is_single_card:
+        card_context = f"You have drawn one card for {user_name}: {cards[0]}"
+        card_instruction = f"Focus deeply on this single card's meaning and how it relates to {user_name}'s question. Provide a comprehensive interpretation of this one card."
+    else:
+        card_context = f"You have drawn three cards for {user_name}: {', '.join(cards)}"
+        card_instruction = f"Interpret these three cards together as a cohesive reading for {user_name}."
+    
+    # Gender-specific language
+    if user_gender.lower() == "m":
+        pronouns = "he/him/his"
+    elif user_gender.lower() == "f":
+        pronouns = "she/her/hers"  
+    else:
+        pronouns = "they/them/their"
+    
+    system_prompt = f"""You are TarotTara, a wise tarot reader speaking to {user_name}.
+    
+    {card_context}
+    
+    Card meanings:
+    {chr(10).join(card_meanings)}
+    
+    {card_instruction}
+    
+    Guidelines:
+    1. Address {user_name} directly and warmly
+    2. Use {pronouns} pronouns when referring to {user_name}
+    3. Connect the card meaning(s) to their specific question
+    4. Provide actionable guidance and insights
+    5. Keep the tone mystical but practical
+    6. Make sure to complete your thoughts fully - don't cut off mid-sentence
+    
+    Question: {question}
+    Intent: {intent}
+    """
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        response = requests.post(API_URL, headers=headers, json={
+            "model": MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Please provide a complete tarot reading for {user_name}'s question."}
+            ],
+            "max_tokens": 1000,  # Increased token limit
+            "temperature": 0.7
+        })
+        
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content'].strip()
+        
+    except Exception as e:
+        return f"I'm having trouble connecting with the spiritual realm right now, {user_name}. Please try again. Error: {str(e)}"
+
+def debug_log_error(context: str, error: Exception):
+    print(f"❌ [{context}] Exception: {error}")
+    print(traceback.format_exc())
+    if hasattr(error, 'response') and error.response is not None:
+        try:
+            print("🔎 Response content:", error.response.text)
+        except Exception as parse_error:
+            print("⚠️ Could not parse error response:", parse_error)
+
+# Make sure DATE_RANGES is defined like this:
+DATE_RANGES = [
+    (datetime(2025, 7, 1), datetime(2025, 7, 31)),
+    (datetime(2025, 8, 1), datetime(2025, 8, 31)),
+    # ...add more ranges as needed...
+]
+
+# When using:
+date_range = random.choice(DATE_RANGES)

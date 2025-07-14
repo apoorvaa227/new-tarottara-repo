@@ -19,7 +19,7 @@
 ## 🛠️ Prerequisites
 
 - Python 3.10 or above
-- [Ollama](https://ollama.com/) (to run the LLaMA 3 model locally)
+<!-- - [Ollama](https://ollama.com/) (to run the LLaMA 3 model locally) -->
 - PDF files containing tarot card meanings (e.g., `1.pdf`, `2.pdf`)
 
 ---

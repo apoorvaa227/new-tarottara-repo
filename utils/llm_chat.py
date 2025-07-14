@@ -18,6 +18,11 @@ GROQ_API_KEY = get_env("GROQ_API_KEY")
 MODEL_NAME =  "llama3-70b-8192"
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+headers = {
+    "Authorization": f"Bearer {GROQ_API_KEY}",
+    "Content-Type": "application/json"
+}
+
 def generate_conversational_response(message: str, user_info: dict = None, detected_lang: str = "en") -> str:
     """
     Generate conversational response with backward compatibility.
@@ -60,11 +65,6 @@ def generate_conversational_response(message: str, user_info: dict = None, detec
     Address {user_name} directly by name in your responses. Use appropriate pronouns ({pronouns}) when referring to {user_name}.
     Be conversational, friendly, and magical like a caring tarot reader friend.{language_context}"""
     
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
     data = {
         "model": MODEL_NAME,
         "messages": [
