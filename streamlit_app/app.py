@@ -233,10 +233,10 @@ with st.sidebar:
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", size=12)
-        pdf.cell(200, 10, text="TarotTara User Log", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+        pdf.cell(200, 10, "TarotTara User Log", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
         pdf.ln(10)
         for key, value in st.session_state.user_info.items():
-            pdf.cell(200, 10, text=f"{key.title()}: {value}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(200, 10, f"{key.title()}: {value}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
         pdf.output(filename)
 
