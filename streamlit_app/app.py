@@ -56,10 +56,10 @@
 #         pdf = FPDF()
 #         pdf.add_page()
 #         pdf.set_font("Helvetica", size=12)
-#         pdf.cell(200, 10, txt="TarotTara User Log", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+#         pdf.cell(200, 10, text="TarotTara User Log", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
 #         pdf.ln(10)
 #         for key, value in user_info.items():
-#             pdf.cell(200, 10, txt=f"{key.title()}: {value}", ln=True)
+#             pdf.cell(200, 10, text=f"{key.title()}: {value}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 #         filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
 #         pdf.output(filename)
 
@@ -233,10 +233,10 @@ with st.sidebar:
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", size=12)
-        pdf.cell(200, 10, txt="TarotTara User Log", ln=True, align="C")
+        pdf.cell(200, 10, text="TarotTara User Log", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
         pdf.ln(10)
         for key, value in st.session_state.user_info.items():
-            pdf.cell(200, 10, txt=f"{key.title()}: {value}", ln=True)
+            pdf.cell(200, 10, text=f"{key.title()}: {value}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         filename = f"user_logs/{name.replace(' ', '_')}_log.pdf"
         pdf.output(filename)
 
@@ -301,3 +301,5 @@ if question and (input_method != "Upload Image" or uploaded_image is not None):
         except Exception as e:
             debug_log_error("Chat Response", e)
             st.error(f"Error generating response: {e}")
+
+

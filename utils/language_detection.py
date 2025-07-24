@@ -253,12 +253,12 @@ Language:"""
             confidence = _calculate_confidence(text, detected_lang)
             return detected_lang, confidence
         else:
-            # Fallback to pattern detection
-            return _detect_by_patterns(text)
+            # Fallback to English for unsupported languages
+            return 'en', 0.5
             
     except Exception as e:
         logger.error(f"Language detection failed: {e}")
-        return _detect_by_patterns(text)
+        return 'en', 0.5  # Default fallback
 
 def get_language_name(lang_code: str) -> str:
     """
@@ -311,7 +311,7 @@ def get_language_name(lang_code: str) -> str:
 
 def normalize_language_for_translation(lang_code: str) -> str:
     """
-    Convert our language codes to Google Translate compatible codes.
+    Convert unsupported language codes to Google Translate compatible codes.
     """
     translation_map = {
         'hinglish': 'hi',  # Treat Hinglish as Hindi for translation purposes

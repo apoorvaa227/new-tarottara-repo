@@ -121,6 +121,16 @@ def main():
         # Intent classification
         intent_start = time.time()
         intent = classify_intent_cached(translated_question)
+        print(f"\n✨ Intent detected: {intent}")
+        # Intent categories:
+        # - conversation: greetings or casual
+        # - yes_no: yes/no questions
+        # - factual: verifiable facts
+        # - timeline: questions about time
+        # - insight: reasons, explanations
+        # - guidance: advice or next steps
+        # - general: unclear or broad questions
+        # ...existing code...
         intent_duration = time.time() - intent_start
         print(f"\n✨ Intent detected: {intent} (in {intent_duration:.2f} sec)")
 
@@ -171,3 +181,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

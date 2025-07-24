@@ -46,7 +46,7 @@ def classify_intent(question: str) -> str:
     conversational_keywords = r"\b(who are you|hi|hello|hey|good morning|good evening|how are you|how's it going|bye|goodbye|see you|what's up|good night|namaste|happy diwali|happy holi)\b"
     if re.search(conversational_keywords, question.lower()):
         return "conversation"
-    print("🔑 Key loaded:", bool(GROQ_API_KEY))
+
     prompt = (
         "You are an intent classifier. Your job is to read a user's question and classify it into ONLY ONE of these categories:\n"
         "- conversation: greetings or casual\n"
@@ -55,6 +55,7 @@ def classify_intent(question: str) -> str:
         "- timeline: questions about time\n"
         "- insight: reasons, explanations\n"
         "- guidance: advice or next steps\n"
+        "- general: unclear or broad questions\n"
         "\nRespond with ONLY one of these words (no explanation):\n"
         f"Q: {question}\nA:"
     )
@@ -82,4 +83,3 @@ def classify_intent_cached(question: str) -> str:
     """Cache the intent classification result per normalized question"""
     question = normalize(question)
     return classify_intent(question)
-

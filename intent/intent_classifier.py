@@ -8,7 +8,10 @@ classifier = pipeline("zero-shot-classification", model="typeform/distilbert-bas
 CANDIDATE_LABELS = ["yes_no", "timeline", "insight", "guidance", "general"]
 
 def classify_intent(question: str) -> str:
-    result = classifier(question, CANDIDATE_LABELS)
+    result = classifier(
+        question,
+        ["conversation", "yes_no", "factual", "timeline", "insight", "guidance", "general"]
+    )
     intent = result["labels"][0].lower()
     
     # Just in case, sanitize to known intents
