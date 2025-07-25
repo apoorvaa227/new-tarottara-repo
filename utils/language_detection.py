@@ -5,7 +5,7 @@ from deep_translator import GoogleTranslator
 import logging
 import requests
 from os import getenv
-import streamlit as st
+# import streamlit as st
 from dotenv import load_dotenv
 import os
 

@@ -3,7 +3,7 @@ import os
 import time
 import traceback
 import uuid  # Import uuid module
-import streamlit as st
+# import streamlit as st
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from deep_translator import GoogleTranslator
