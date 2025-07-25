@@ -45,7 +45,6 @@
 # ELEVENLABS_API_KEY = get_env("ELEVENLABS_API_KEY")
 
 import os
-import streamlit as st
 from dotenv import load_dotenv
 
 # Load environment variables from .env (for local dev)
@@ -53,7 +52,7 @@ load_dotenv()
 
 # Universal getter (works both locally and on Streamlit Cloud)
 def get_env(key: str, default=None):
-    return st.secrets.get(key, os.getenv(key, default))
+    return os.getenv(key, default)
 
 
 # LLM / API Keys
@@ -83,4 +82,5 @@ PDF_PATHS = ["pdf_file/tarot_guide.pdf"]
 
 # Voice Services
 ASSEMBLYAI_API_KEY = get_env("ASSEMBLYAI_API_KEY")
+ELEVENLABS_API_KEY = get_env("ELEVENLABS_API_KEY")
 ELEVENLABS_API_KEY = get_env("ELEVENLABS_API_KEY")

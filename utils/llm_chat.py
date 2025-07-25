@@ -9,10 +9,7 @@ load_dotenv()
 
 # Universal getter for local + Streamlit Cloud
 def get_env(key: str, default=None):
-    try:
-        return st.secrets.get(key, os.getenv(key, default))
-    except:
-        return os.getenv(key, default)
+    return os.getenv(key, default)
 
 GROQ_API_KEY = get_env("GROQ_API_KEY")
 MODEL_NAME = "llama3-70b-8192"

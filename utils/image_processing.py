@@ -8,10 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_env(key: str, default=None):
-    try:
-        return st.secrets.get(key, os.getenv(key, default))
-    except:
-        return os.getenv(key, default)
+    return os.getenv(key, default)
 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = get_env("GROQ_API_KEY")

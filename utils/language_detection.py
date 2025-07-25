@@ -7,6 +7,7 @@ import requests
 from os import getenv
 import streamlit as st
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -16,10 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Universal getter for local + Streamlit Cloud
 def get_env(key: str, default=None):
-    try:
-        return st.secrets.get(key, getenv(key, default))
-    except:
-        return getenv(key, default)
+    return os.getenv(key, default)
 
 def groq_invoke(prompt: str, max_tokens: int = 50, temperature: float = 0) -> str:
     """
