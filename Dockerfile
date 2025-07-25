@@ -1,18 +1,18 @@
-# Use an official Python runtime as base
+# Use Python 3.11 as the base image
 FROM python:3.11-slim
 
-# Set working directory
-WORKDIR /app
+# Set the working directory inside the container
+WORKDIR /api
 
-# Copy project files
+# Copy the project files into the container
 COPY . .
 
-# Install dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Install Python dependencies
+COPY requirements.txt /api/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose Streamlit port
+# Expose the port your application runs on
 EXPOSE 8501
 
-# Run Streamlit app
-CMD ["streamlit", "run", "streamlit_app/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Set the entry point for the container
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8501"]

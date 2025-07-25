@@ -25,7 +25,6 @@ def debug_log_error(context: str, error: Exception):
         except Exception as parse_error:
             print("⚠️ Could not parse error response:", parse_error)
 
-#  also in constant 
 def main():
     print("\U0001f52e Welcome to TarotTara – your magical tarot guide (type 'exit' to quit)\n")
     
@@ -117,20 +116,11 @@ def main():
         # Normalize language for translation
         translation_lang = normalize_language_for_translation(detected_lang)
         translated_question = GoogleTranslator(source=translation_lang, target='en').translate(question) if translation_lang != "en" else question
-        #  python decorator 
+
         # Intent classification
         intent_start = time.time()
         intent = classify_intent_cached(translated_question)
         print(f"\n✨ Intent detected: {intent}")
-        # Intent categories:
-        # - conversation: greetings or casual
-        # - yes_no: yes/no questions
-        # - factual: verifiable facts
-        # - timeline: questions about time
-        # - insight: reasons, explanations
-        # - guidance: advice or next steps
-        # - general: unclear or broad questions
-        # ...existing code...
         intent_duration = time.time() - intent_start
         print(f"\n✨ Intent detected: {intent} (in {intent_duration:.2f} sec)")
 
@@ -141,11 +131,10 @@ def main():
             debug_log_error("Tarot Reading", e)
             print(f"⚠️ Error: {result['error']}")
             continue
-        # decorator in reading 
+
         answer_en = result["interpretation"]
 
         print(f"\n🔍 TarotTara's reading for {user_name}:")
-        #  crash problem 
         if intent == "timeline":
             card = result["card"]
             date_range = result["date_range"]
@@ -163,15 +152,6 @@ def main():
         # Translate back to user's preferred language
         final_answer = GoogleTranslator(source='en', target=user_language).translate(answer_en) if user_language != "en" else answer_en
         print(f"\n🕡 TarotTara to {user_name} ({user_language}):\n{final_answer}")
-
-        # Voice generation
-        # try:
-        #     print("\n🔊 Speaking the response...")
-        #     audio_path = synthesize_voice(final_answer, user_input_lang=user_language)
-
-        #     play_voice_response(audio_path)
-        # except Exception as e:
-        #     print(f"⚠️ Error playing voice response: {e}")
 
         total_duration = time.time() - total_start
         print("\n⏱️ Timing Summary:")

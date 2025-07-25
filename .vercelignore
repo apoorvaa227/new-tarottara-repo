@@ -1,0 +1,34 @@
+# Ignore virtual environment
+venv311/
+venv/
+# Ignore Streamlit secrets
+.streamlit/
+static/
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.db
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore PDFs or large binary files
+*.pdf
+
+# Ignore test files
+tests/
+temp_api.py
+replace-text.txt
+query_test.py
+create_index.py
+benchmark_intent.py
+
+# Ignore font files
+C:\Users\Dell\AI-Tarot\NotoSansDevanagari-VariableFont_wdth,wght.ttf
+
+# Ignore cache files
+__pycache__/
+.cache/
