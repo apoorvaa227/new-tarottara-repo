@@ -5,6 +5,7 @@ from intent.intent import classify_intent_cached
 from tarot.tarot_reader import cached_reading
 from utils.language_detection import detect_language_with_groq, get_language_name, normalize_language_for_translation
 from deep_translator import GoogleTranslator
+import os
 
 app = FastAPI()
 
@@ -19,36 +20,43 @@ class ReadingResponse(BaseModel):
     cards: list
     interpretation: str
 
-@app.post("/classify-intent/")
-def classify_intent_endpoint(request: QuestionRequest):
-    try:
-        intent = classify_intent_cached(request.question)
-        return {"intent": intent}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Update the get_env function to use os.getenv directly
+def get_env(key: str, default: Optional[str] = None) -> str:
+    return os.getenv(key, default)
 
-@app.post("/tarot-reading/", response_model=ReadingResponse)
-def tarot_reading_endpoint(request: QuestionRequest):
-    try:
-        detected_lang, _ = detect_language_with_groq(request.question)
-        translated_question = GoogleTranslator(source=detected_lang, target="en").translate(request.question) if detected_lang != "en" else request.question
-        result = cached_reading(translated_question, classify_intent_cached(translated_question), request.user_name, request.user_gender, detected_lang)
-        if "error" in result:
-            raise HTTPException(status_code=500, detail=result["error"])
-        return {
-            "cards": result.get("cards", []),
-            "interpretation": GoogleTranslator(source="en", target=request.user_language).translate(result["interpretation"]) if request.user_language != "en" else result["interpretation"]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Replace the usage of st.secrets with os.getenv
+GROQ_API_KEY = get_env("GROQ_API_KEY")
 
-@app.get("/detect-language/")
-def detect_language_endpoint(text: str):
-    try:
-        detected_lang, confidence = detect_language_with_groq(text)
-        return {"language": detected_lang, "confidence": confidence, "language_name": get_language_name(detected_lang)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/classify-intent/")
+# def classify_intent_endpoint(request: QuestionRequest):
+#     try:
+#         intent = classify_intent_cached(request.question)
+#         return {"intent": intent}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+# @app.post("/tarot-reading/", response_model=ReadingResponse)
+# def tarot_reading_endpoint(request: QuestionRequest):
+#     try:
+#         detected_lang, _ = detect_language_with_groq(request.question)
+#         translated_question = GoogleTranslator(source=detected_lang, target="en").translate(request.question) if detected_lang != "en" else request.question
+#         result = cached_reading(translated_question, classify_intent_cached(translated_question), request.user_name, request.user_gender, detected_lang)
+#         if "error" in result:
+#             raise HTTPException(status_code=500, detail=result["error"])
+#         return {
+#             "cards": result.get("cards", []),
+#             "interpretation": GoogleTranslator(source="en", target=request.user_language).translate(result["interpretation"]) if request.user_language != "en" else result["interpretation"]
+#         }
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+# @app.get("/detect-language/")
+# def detect_language_endpoint(text: str):
+#     try:
+#         detected_lang, confidence = detect_language_with_groq(text)
+#         return {"language": detected_lang, "confidence": confidence, "language_name": get_language_name(detected_lang)}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tarot-reading/")
 def get_tarot_reading(
@@ -106,27 +114,26 @@ def get_tarot_reading(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/tarot-reading-query/")
-def get_tarot_reading_query(
-    generated_cards: str = Query(..., description="Comma-separated list of generated cards"),
-    interpretation: str = Query(..., description="Interpretation of the reading"),
-    language: str = Query(..., description="Language of the response"),
-    intent: str = Query(..., description="Intent of the user's query")
-):
-    """
-    GET API to accept query parameters and return the tarot reading data.
-    """
-    try:
-        # Parse the generated cards
-        cards = generated_cards.split(",")
+# @app.get("/tarot-reading-query/")
+# def get_tarot_reading_query(
+#     generated_cards: str = Query(..., description="Comma-separated list of generated cards"),
+#     interpretation: str = Query(..., description="Interpretation of the reading"),
+#     language: str = Query(..., description="Language of the response"),
+#     intent: str = Query(..., description="Intent of the user's query")
+# ):
+#     """
+#     GET API to accept query parameters and return the tarot reading data.
+#     """
+#     try:
+#         # Parse the generated cards
+#         cards = generated_cards.split(",")
 
-        # Return the response
-        return {
-            "generated_cards": cards,
-            "interpretation": interpretation,
-            "language": language,
-            "intent": intent
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-        
+#         # Return the response
+#         return {
+#             "generated_cards": cards,
+#             "interpretation": interpretation,
+#             "language": language,
+#             "intent": intent
+#         }
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))

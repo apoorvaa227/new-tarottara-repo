@@ -8,7 +8,6 @@ WORKDIR /api
 COPY . .
 
 # Install Python dependencies
-COPY requirements.txt /api/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the port your application runs on
