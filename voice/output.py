@@ -1,40 +1,45 @@
 # 📁 voice/output.py
+import io
+import wave
 import os
-from gtts import gTTS
+from dotenv import load_dotenv
+from elevenlabs import ElevenLabs
+from pydub import AudioSegment
 from playsound import playsound
+import tempfile
 
-def synthesize_voice(text, user_input_lang='en', filename="response_audio.mp3"):
-    """
-    Converts already translated (or original) text to speech using gTTS.
-    """
+load_dotenv()
+
+api_key = os.getenv("ELEVENLABS_API_KEY")
+voice_id = os.getenv("VOICE_ID")
+if not api_key or not voice_id:
+    raise EnvironmentError("Missing ELEVENLABS_API_KEY or VOICE_ID")
+
+client = ElevenLabs(api_key=api_key)
+
+def convert_mp3_to_wav(mp3_bytes):
+    mp3_io = io.BytesIO(mp3_bytes)
+    audio = AudioSegment.from_file(mp3_io, format="mp3")
+    wav_io = io.BytesIO()
+    audio.export(wav_io, format="wav")
+    wav_io.seek(0)
+    return wav_io
+
+def speak(text):
+    audio_stream = client.text_to_speech.convert(voice_id=voice_id, text=text)
+    audio_bytes = b''.join(audio_stream)
+    
+    # Create a temporary file to save the audio
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_file:
+        temp_file.write(audio_bytes)
+        temp_file_path = temp_file.name
+    
     try:
-        if os.path.exists(filename):
-            try:
-                os.remove(filename)
-            except Exception as e:
-                print(f"⚠️ Could not delete existing audio file: {e}")
-                return None
-
-        tts = gTTS(text=text, lang=user_input_lang)
-        tts.save(filename)
-        return filename
-
-    except Exception as e:
-        print("⚠️ Error generating voice:")
-        print(e)
-        return None
-
-def play_voice_response(audio_path):
-    """
-    Plays the audio file and handles replay logic.
-    """
-    if audio_path and os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
-        playsound(audio_path)
-        while True:
-            replay = input("🔁 Do you want to replay the voice response? (y/n): ").strip().lower()
-            if replay == "y":
-                playsound(audio_path)
-            else:
-                break
-    else:
-        print("⚠️ Audio file not generated properly.")
+        # Play the audio file
+        playsound(temp_file_path)
+    finally:
+        # Clean up the temporary file
+        try:
+            os.unlink(temp_file_path)
+        except:
+            pass

@@ -1,0 +1,44 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hello shailvi! I'm TarotTara, your personal tarot guide. How can I help you today?"
+    },
+    {
+      "role": "user",
+      "content": "mera kya naam hai"
+    },
+    {
+      "role": "assistant",
+      "content": "Shailvi, aapka naam pata lagane ke liye, main ek tarot card draw karoongi!\n\nI drew one card for you...\n\n**The Card:** Knight of Wands\n\n**Meaning:** Adventure, Action, Passion\n\nHmm, it seems like your name is related to adventure, passion, or action. Is your name something like Akira, meaning \"bright\" or \"clear\", or maybe something like Arya, meaning \"noble\" or \"lioness\"? Or perhaps it's a name that starts with a strong, bold letter like \"K\" or \"A\"? Whatever it is, it's definitely a name that reflects your fiery personality!\n\nTell me, am I close, shailvi?"
+    },
+    {
+      "role": "user",
+      "content": "mera name kya h ? "
+    },
+    {
+      "role": "assistant",
+      "content": "Shailvi, aapka naam pata lagane ke liye, main ek aur tarot card draw karoongi!\n\nI drew another card for you...\n\n**The Card:** The High Priestess\n\n**Meaning:** Secrets, Intuition, Mystery\n\nArre, it seems like your name is still a secret, even to me! The High Priestess is all about intuition and mystery, so I'm going to take a wild guess and say that your name is something that's unique, maybe even a bit unconventional. Am I right?\n\nBut, shailvi, I have to be honest with you, tarot cards can't really reveal your actual name. That's something only you know! Maybe you can give me a hint or tell me your name yourself?"
+    },
+    {
+      "role": "user",
+      "content": "aaj mera din kaisa jayega ? "
+    },
+    {
+      "role": "assistant",
+      "content": "Shailvi, aaj ka din kaisa jayega, yeh jaane ke liye main ek tarot card draw karoongi!\n\nI drew one card for you...\n\n**The Card:** The Star\n\n**Meaning:** Hope, Positive Energy, Guidance\n\nAaj ka din aapke liye bahut achcha jayega, shailvi! The Star is a very positive card, and it indicates that today will be a day filled with hope and positive energy. You might receive some good news or guidance that will help you move forward in life. Keep your heart and mind open, and you'll attract all the good vibes!\n\nSab theek ho jayega, shailvi. Aaj ka din aapke liye ek nayi shuruaat leke aayega. Keep shining, my friend!"
+    }
+  ],
+  "user_info": {
+    "name": "shailvi",
+    "gender": "F",
+    "dob": "Not provided",
+    "birth_place": "Not provided",
+    "birth_time": "Not provided",
+    "mood": "Good",
+    "day_summary": "Going well",
+    "language": "hinglish"
+  },
+  "created_at": "2025-07-27T15:19:24.046155",
+  "session_name": "mera_kya_naam_hai"
+}

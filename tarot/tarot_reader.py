@@ -170,19 +170,27 @@ def perform_reading(question: str, intent: str, user_info: dict = None, detected
             return {"cards": [], "interpretation": response}
 
         elif intent == "timeline":
-            # Draw 1 card for timeline intent
-            card = random.choice(NUMERIC_CARDS)
-            date_range = DATE_RANGES[card]
-            card_meaning = get_card_meaning(card)
-
+            # Draw 3 cards for timeline intent
+            cards = random.sample(FULL_DECK, k=3)
+            meanings = [get_card_meaning(card) for card in cards]
             prompt = f"""
 Tarot reader, intuitively answer this timeline question for {user_name}:
 '{question}'
-Card: {card}, Date: {date_range[0].strftime('%B %d')}–{date_range[1].strftime('%B %d')}
-Meaning: {card_meaning}
+Cards drawn:
+1. Present: {cards[0]} - {meanings[0]}
+2. Future: {cards[1]} - {meanings[1]}
+3. Past: {cards[2]} - {meanings[2]}
 """
             response = query_groq(prompt, user_info, detected_lang)
-            return {"cards": [card], "date_range": date_range, "interpretation": response}
+            return {
+                "cards": cards,
+                "timeline": {
+                    "present": cards[0],
+                    "future": cards[1],
+                    "past": cards[2]
+                },
+                "interpretation": response
+            }
 
         elif intent in ["guidance", "insight"]:
             # Draw 3 cards for guidance or insight intent
